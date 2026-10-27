@@ -995,5 +995,14 @@
             initReferenceTable();
         };
     </script>
+    <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((reg) => console.log('Service Worker 註冊成功，已支援離線遊玩！', reg))
+        .catch((err) => console.log('Service Worker 註冊失敗:', err));
+    });
+  }
+</script>
 </body>
 </html>
