@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角函數特角數值配對大挑戰 | Trig Value Matcher</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        trig: {
+                            primary: '#6366f1',
+                            secondary: '#06b6d4',
+                            accent: '#f59e0b',
+                            dark: '#0f172a',
+                            card: '#1e293b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom 3D Card Flip Styles */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        
+        /* Math Fraction Styling */
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 0.95em;
+            line-height: 1;
+            padding: 0 0.15em;
+        }
+        .frac .top {
+            border-bottom: 1.5px solid currentColor;
+            padding-bottom: 2px;
+            margin-bottom: 1px;
+        }
+        .frac .bottom {
+            padding-top: 1px;
+        }
+        .sqrt {
+            border-top: 1.5px solid currentColor;
+            padding-left: 1px;
+            margin-left: 1px;
+        }
+
+        /* Pulsing Glow Effect */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.8); }
+        }
+        .glow-active {
+            animation: pulse-glow 2s infinite;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- TOP NAV / HEADER -->
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-indigo-500 to-cyan-400 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid font-bold text-xl text-white">θ</i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black bg-gradient-to-r from-indigo-400 via-cyan-400 to-teal-300 bg-clip-text text-transparent">
+                        三角函數特角對對碰
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Trigonometry Values Master</p>
+                </div>
+            </div>
+
+            <!-- Header Controls & Cheatsheet Toggle -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button id="sound-btn" onclick="toggleSound()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors" title="切換音效">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-base"></i>
+                </button>
+                <button onclick="toggleReferenceModal()" class="px-3 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 font-medium text-sm flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-table"></i>
+                    <span>對照表</span>
+                </button>
+                <button onclick="returnToMenu()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm flex items-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-house"></i>
+                    <span class="hidden sm:inline">選單</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-grow flex flex-col justify-center">
+
+        <!-- SCREEN 1: MENU & CONFIGURATION -->
+        <div id="menu-screen" class="space-y-8 my-auto py-4">
+            <!-- Hero Title -->
+            <div class="text-center space-y-3 max-w-2xl mx-auto">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    標準角 0° · 30° · 45° · 60° · 90°
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                    選擇挑戰模式與難度
+                </h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    熟記正弦、餘弦、正切、餘切、正割與餘割特角數值，強化你的數學直覺！
+                </p>
+            </div>
+
+            <!-- Game Mode Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- Mode 1: Memory -->
+                <div onclick="selectMode('memory')" class="group relative bg-slate-900 border border-slate-800 hover:border-indigo-500/60 rounded-2xl p-6 transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:shadow-indigo-500/10 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-clone"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">經典翻牌配對</h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">翻開兩張卡片，找出三角函數表示式與對應精確數值的配對對象。</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center text-xs font-semibold text-indigo-400">
+                        <span>開始配對</span>
+                        <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+
+                <!-- Mode 2: Drag and Drop -->
+                <div onclick="selectMode('drag')" class="group relative bg-slate-900 border border-slate-800 hover:border-cyan-500/60 rounded-2xl p-6 transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:shadow-cyan-500/10 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-hand-pointer"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">拖曳速配模式</h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">滑動或拖曳左側的三角函數，精準放置到右側對應的正確數值目標上。</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center text-xs font-semibold text-cyan-400">
+                        <span>拖曳挑戰</span>
+                        <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+
+                <!-- Mode 3: Speed Challenge -->
+                <div onclick="selectMode('speed')" class="group relative bg-slate-900 border border-slate-800 hover:border-amber-500/60 rounded-2xl p-6 transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">限時快答挑戰</h3>
+                            <p class="text-xs text-slate-400 mt-1 leading-relaxed">在倒數時間內快速選擇正確答案，累積連擊 Combo 賺取最高積分！</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center text-xs font-semibold text-amber-400">
+                        <span>極速挑戰</span>
+                        <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Difficulty Settings Panel -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 max-w-xl mx-auto space-y-3">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">選擇題目難度範圍</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="diff-easy" onclick="setDifficulty('easy')" class="px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all text-center">
+                        初級 (sin, cos)
+                    </button>
+                    <button id="diff-medium" onclick="setDifficulty('medium')" class="px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all text-center">
+                        中級 (+ tan, cot)
+                    </button>
+                    <button id="diff-hard" onclick="setDifficulty('hard')" class="px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all text-center">
+                        高級 (全 6 種函數)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: GAMEPLAY AREA -->
+        <div id="game-screen" class="hidden flex-col gap-5">
+            <!-- HUD Stats Bar -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+                <div class="flex items-center space-x-6">
+                    <div>
+                        <span class="text-xs text-slate-400 block font-medium">分數 Score</span>
+                        <span id="score-val" class="text-2xl font-black text-indigo-400">0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 block font-medium">連擊 Combo</span>
+                        <div class="flex items-center space-x-1">
+                            <span id="combo-val" class="text-2xl font-black text-amber-400">0</span>
+                            <span id="combo-badge" class="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold hidden">x1.5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Specific Info / Timer -->
+                <div class="flex items-center space-x-4">
+                    <div id="timer-box" class="flex items-center space-x-2 bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-slate-700">
+                        <i class="fa-regular fa-clock text-indigo-400"></i>
+                        <span id="timer-val" class="text-lg font-mono font-bold text-white">00:00</span>
+                    </div>
+                    <button onclick="startGame()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-medium border border-slate-700 transition-colors">
+                        <i class="fa-solid fa-rotate-right mr-1"></i>重來
+                    </button>
+                </div>
+            </div>
+
+            <!-- GAME CONTAINER: MEMORY MODE -->
+            <div id="memory-game-container" class="hidden">
+                <div id="memory-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
+                    <!-- Cards dynamically injected here -->
+                </div>
+            </div>
+
+            <!-- GAME CONTAINER: DRAG & DROP MODE -->
+            <div id="drag-game-container" class="hidden flex flex-col md:flex-row gap-6">
+                <!-- Draggable Elements (Functions) -->
+                <div class="w-full md:w-1/2 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5">
+                    <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-grip-vertical text-cyan-400"></i> 拖曳三角函數表示式
+                    </h3>
+                    <div id="drag-source-list" class="grid grid-cols-2 gap-3">
+                        <!-- Draggables injected here -->
+                    </div>
+                </div>
+                <!-- Drop Targets (Values) -->
+                <div class="w-full md:w-1/2 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5">
+                    <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-bullseye text-indigo-400"></i> 對應正確數值
+                    </h3>
+                    <div id="drag-target-list" class="grid grid-cols-1 gap-3">
+                        <!-- Targets injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- GAME CONTAINER: SPEED QUIZ MODE -->
+            <div id="speed-game-container" class="hidden max-w-2xl mx-auto w-full">
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 text-center shadow-xl">
+                    <!-- Question Card -->
+                    <div class="space-y-2">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">當前題目</span>
+                        <div id="speed-question" class="text-4xl sm:text-5xl font-black text-indigo-300 py-4 min-h-[90px] flex items-center justify-center">
+                            sin(30°)
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar for Question Timeout -->
+                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div id="speed-progress" class="bg-gradient-to-r from-indigo-500 to-amber-400 h-full w-full transition-all duration-100 ease-linear"></div>
+                    </div>
+
+                    <!-- Option Buttons -->
+                    <div id="speed-options" class="grid grid-cols-2 gap-4 pt-2">
+                        <!-- Options injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: RESULT / VICTORY MODAL -->
+        <div id="result-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-6 text-center shadow-2xl relative">
+                <div class="w-20 h-20 bg-gradient-to-tr from-amber-400 to-amber-600 rounded-3xl mx-auto flex items-center justify-center text-white text-3xl shadow-lg shadow-amber-500/30">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                
+                <div class="space-y-1">
+                    <h3 class="text-2xl font-black text-white">挑戰完成！</h3>
+                    <p class="text-slate-400 text-sm">你的三角函數特角記憶力真厲害！</p>
+                </div>
+
+                <div class="bg-slate-950/60 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-slate-800/80">
+                    <div>
+                        <span class="text-xs text-slate-400 block">最終得分</span>
+                        <span id="final-score" class="text-2xl font-black text-indigo-400">0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 block">耗費時間 / 最高連擊</span>
+                        <span id="final-stat" class="text-lg font-bold text-amber-400 mt-1 block">0s</span>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button onclick="startGame()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all">
+                        再玩一次
+                    </button>
+                    <button onclick="returnToMenu()" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold text-sm transition-all">
+                        選單
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- REFERENCE TABLE MODAL -->
+        <div id="reference-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 max-w-3xl w-full space-y-5 shadow-2xl max-h-[90vh] flex flex-col">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-table text-indigo-400 text-lg"></i>
+                        <h3 class="text-lg font-bold text-white">三角函數特角數值對照表</h3>
+                    </div>
+                    <button onclick="toggleReferenceModal()" class="text-slate-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Table Content -->
+                <div class="overflow-x-auto flex-grow">
+                    <table class="w-full text-center border-collapse">
+                        <thead>
+                            <tr class="bg-slate-800/60 text-indigo-300 text-xs sm:text-sm font-semibold">
+                                <th class="p-3 border border-slate-800">函數 \ 角度</th>
+                                <th class="p-3 border border-slate-800">0° (0)</th>
+                                <th class="p-3 border border-slate-800">30° (π/6)</th>
+                                <th class="p-3 border border-slate-800">45° (π/4)</th>
+                                <th class="p-3 border border-slate-800">60° (π/3)</th>
+                                <th class="p-3 border border-slate-800">90° (π/2)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reference-table-body" class="text-sm divide-y divide-slate-800 text-slate-200">
+                            <!-- Table rows filled by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-xs text-slate-400 bg-slate-950/40 p-3 rounded-xl border border-slate-800/50 flex justify-between items-center">
+                    <span>💡 提示：互餘角度的 sin/cos 與 tan/cot 數值具有倒數或互餘轉換關係！</span>
+                    <button onclick="toggleReferenceModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold">關閉</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="py-4 border-t border-slate-800/60 text-center text-xs text-slate-400">
+        <p>三角函數特角配對遊戲 &copy; 2026 Interactive Math Learning. Designed for Clarity & Fun.</p>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* ==================== 1. DATA DEFINITIONS ==================== */
+        // Standard Angles & Trigonometric Functions Data Source
+        const TRIG_DATA = [
+            // SIN
+            { func: 'sin', angle: '0°', valStr: '0', htmlVal: '0' },
+            { func: 'sin', angle: '30°', valStr: '1/2', htmlVal: `<div class="frac"><span class="top">1</span><span class="bottom">2</span></div>` },
+            { func: 'sin', angle: '45°', valStr: '√2/2', htmlVal: `<div class="frac"><span class="top"><span class="sqrt">√2</span></span><span class="bottom">2</span></div>` },
+            { func: 'sin', angle: '60°', valStr: '√3/2', htmlVal: `<div class="frac"><span class="top"><span class="sqrt">√3</span></span><span class="bottom">2</span></div>` },
+            { func: 'sin', angle: '90°', valStr: '1', htmlVal: '1' },
+
+            // COS
+            { func: 'cos', angle: '0°', valStr: '1', htmlVal: '1' },
+            { func: 'cos', angle: '30°', valStr: '√3/2', htmlVal: `<div class="frac"><span class="top"><span class="sqrt">√3</span></span><span class="bottom">2</span></div>` },
+            { func: 'cos', angle: '45°', valStr: '√2/2', htmlVal: `<div class="frac"><span class="top"><span class="sqrt">√2</span></span><span class="bottom">2</span></div>` },
+            { func: 'cos', angle: '60°', valStr: '1/2', htmlVal: `<div class="frac"><span class="top">1</span><span class="bottom">2</span></div>` },
+            { func: 'cos', angle: '90°', valStr: '0', htmlVal: '0' },
+
+            // TAN
+            { func: 'tan', angle: '0°', valStr: '0', htmlVal: '0' },
+            { func: 'tan', angle: '30°', valStr: '√3/3', htmlVal: `<div class="frac"><span class="top"><span class="sqrt">√3</span></span><span class="bottom">3</span></div>` },
+            { func: 'tan', angle: '45°', valStr: '1', htmlVal: '1' },
+            { func: 'tan', angle: '60°', valStr: '√3', htmlVal: '<span class="sqrt">√3</span>' },
+            { func: 'tan', angle: '90°', valStr: '未定義', htmlVal: '<span class="text-rose-400 font-sans">未定義</span>' },
+
+            // COT
+            { func: 'cot', angle: '0°', valStr: '未定義', htmlVal: '<span class="text-rose-400 font-sans">未定義</span>' },
+            { func: 'cot', angle: '30°', valStr: '√3', htmlVal: '<span class="sqrt">√3</span>' },
+            { func: 'cot', angle: '45°', valStr: '1', htmlVal: '1' },
+            { func: 'cot', angle: '60°', valStr: '√3/3', htmlVal: `<div class="frac"><span class="top"><span class="sqrt">√3</span></span><span class="bottom">3</span></div>` },
+            { func: 'cot', angle: '90°', valStr: '0', htmlVal: '0' },
+
+            // SEC
+            { func: 'sec', angle: '0°', valStr: '1', htmlVal: '1' },
+            { func: 'sec', angle: '30°', valStr: '2√3/3', htmlVal: `<div class="frac"><span class="top">2<span class="sqrt">√3</span></span><span class="bottom">3</span></div>` },
+            { func: 'sec', angle: '45°', valStr: '√2', htmlVal: '<span class="sqrt">√2</span>' },
+            { func: 'sec', angle: '60°', valStr: '2', htmlVal: '2' },
+            { func: 'sec', angle: '90°', valStr: '未定義', htmlVal: '<span class="text-rose-400 font-sans">未定義</span>' },
+
+            // CSC
+            { func: 'csc', angle: '0°', valStr: '未定義', htmlVal: '<span class="text-rose-400 font-sans">未定義</span>' },
+            { func: 'csc', angle: '30°', valStr: '2', htmlVal: '2' },
+            { func: 'csc', angle: '45°', valStr: '√2', htmlVal: '<span class="sqrt">√2</span>' },
+            { func: 'csc', angle: '60°', valStr: '2√3/3', htmlVal: `<div class="frac"><span class="top">2<span class="sqrt">√3</span></span><span class="bottom">3</span></div>` },
+            { func: 'csc', angle: '90°', valStr: '1', htmlVal: '1' }
+        ];
+
+        /* ==================== 2. AUDIO SYNTHESIZER (WEB AUDIO API) ==================== */
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'flip') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'match') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.setValueAtTime(180, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'win') {
+                // Fanfare notes
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    g.gain.setValueAtTime(0.2, now + idx * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
+                    o.start(now + idx * 0.1);
+                    o.stop(now + idx * 0.1 + 0.3);
+                });
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-base';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-base text-slate-500';
+            }
+        }
+
+        /* ==================== 3. GAME STATE MANAGEMENT ==================== */
+        let currentMode = 'memory'; // 'memory', 'drag', 'speed'
+        let currentDifficulty = 'easy'; // 'easy', 'medium', 'hard'
+        let score = 0;
+        let combo = 0;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+        let activePairs = [];
+
+        // Difficulty Settings
+        function setDifficulty(diff) {
+            currentDifficulty = diff;
+            const btnEasy = document.getElementById('diff-easy');
+            const btnMedium = document.getElementById('diff-medium');
+            const btnHard = document.getElementById('diff-hard');
+
+            const activeClass = 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/30';
+            const inactiveClass = 'bg-slate-800/80 border-slate-700 text-slate-400 hover:bg-slate-800';
+
+            btnEasy.className = `px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all text-center ${diff === 'easy' ? activeClass : inactiveClass}`;
+            btnMedium.className = `px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all text-center ${diff === 'medium' ? activeClass : inactiveClass}`;
+            btnHard.className = `px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all text-center ${diff === 'hard' ? activeClass : inactiveClass}`;
+        }
+
+        function getFilteredTrigData() {
+            let funcs = ['sin', 'cos'];
+            if (currentDifficulty === 'medium') funcs = ['sin', 'cos', 'tan', 'cot'];
+            if (currentDifficulty === 'hard') funcs = ['sin', 'cos', 'tan', 'cot', 'sec', 'csc'];
+            return TRIG_DATA.filter(item => funcs.includes(item.func));
+        }
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            startGame();
+        }
+
+        function returnToMenu() {
+            clearInterval(timerInterval);
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('result-modal').classList.add('hidden');
+            document.getElementById('menu-screen').classList.remove('hidden');
+        }
+
+        function startGame() {
+            clearInterval(timerInterval);
+            secondsElapsed = 0;
+            score = 0;
+            combo = 0;
+            updateHUD();
+            document.getElementById('result-modal').classList.add('hidden');
+
+            // Hide all game containers
+            document.getElementById('memory-game-container').classList.add('hidden');
+            document.getElementById('drag-game-container').classList.add('hidden');
+            document.getElementById('speed-game-container').classList.add('hidden');
+
+            startTimer();
+
+            if (currentMode === 'memory') {
+                initMemoryGame();
+            } else if (currentMode === 'drag') {
+                initDragGame();
+            } else if (currentMode === 'speed') {
+                initSpeedGame();
+            }
+        }
+
+        function startTimer() {
+            const timerVal = document.getElementById('timer-val');
+            timerVal.textContent = "00:00";
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                const secs = String(secondsElapsed % 60).padStart(2, '0');
+                timerVal.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function addScore(points) {
+            combo++;
+            const multiplier = combo >= 3 ? 1.5 : 1;
+            score += Math.round(points * multiplier);
+            updateHUD();
+        }
+
+        function resetCombo() {
+            combo = 0;
+            updateHUD();
+        }
+
+        function updateHUD() {
+            document.getElementById('score-val').textContent = score;
+            document.getElementById('combo-val').textContent = combo;
+            const badge = document.getElementById('combo-badge');
+            if (combo >= 3) {
+                badge.classList.remove('hidden');
+                badge.textContent = `x${(combo >= 5 ? 2 : 1.5)}`;
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function showVictoryScreen() {
+            clearInterval(timerInterval);
+            playSound('win');
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-stat').textContent = `${secondsElapsed}s / ${combo} 連擊`;
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        /* ==================== 4. MEMORY CARD GAME LOGIC ==================== */
+        let memoryCards = [];
+        let flippedCards = [];
+        let matchedPairsCount = 0;
+        let totalPairs = 0;
+
+        function initMemoryGame() {
+            const container = document.getElementById('memory-game-container');
+            container.classList.remove('hidden');
+            const grid = document.getElementById('memory-grid');
+            grid.innerHTML = '';
+
+            const dataPool = getFilteredTrigData();
+            // Pick a subset of 6-8 items depending on difficulty
+            const sampleCount = currentDifficulty === 'easy' ? 6 : (currentDifficulty === 'medium' ? 8 : 10);
+            const shuffledPool = [...dataPool].sort(() => 0.5 - Math.random());
+            const selectedItems = shuffledPool.slice(0, sampleCount);
+
+            totalPairs = selectedItems.length;
+            matchedPairsCount = 0;
+
+            // Generate pairs: One for Function Expression, One for Value
+            memoryCards = [];
+            selectedItems.forEach((item, index) => {
+                memoryCards.push({
+                    id: `expr-${index}`,
+                    pairId: index,
+                    type: 'expr',
+                    displayHtml: `<span class="font-bold text-indigo-300 text-base sm:text-lg">${item.func}(${item.angle})</span>`,
+                    rawItem: item
+                });
+                memoryCards.push({
+                    id: `val-${index}`,
+                    pairId: index,
+                    type: 'val',
+                    displayHtml: `<span class="font-black text-cyan-300 text-lg sm:text-2xl">${item.htmlVal}</span>`,
+                    rawItem: item
+                });
+            });
+
+            // Shuffle Cards
+            memoryCards.sort(() => 0.5 - Math.random());
+
+            // Render Cards DOM
+            memoryCards.forEach((card, idx) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'perspective-1000 h-28 sm:h-32 cursor-pointer';
+                cardEl.innerHTML = `
+                    <div id="card-inner-${idx}" class="transform-style-3d w-full h-full relative rounded-2xl shadow-lg transition-transform duration-500">
+                        <!-- FRONT (FACING DOWN) -->
+                        <div class="backface-hidden absolute inset-0 bg-slate-900 border-2 border-slate-800 hover:border-indigo-500/50 rounded-2xl flex items-center justify-center text-slate-600 text-xl font-black">
+                            <i class="fa-solid fa-square-root-variable"></i>
+                        </div>
+                        <!-- BACK (FACING UP) -->
+                        <div class="backface-hidden rotate-y-180 absolute inset-0 bg-slate-800 border-2 border-indigo-500/80 rounded-2xl flex items-center justify-center p-2 text-center">
+                            ${card.displayHtml}
+                        </div>
+                    </div>
+                `;
+                cardEl.onclick = () => handleCardClick(idx);
+                grid.appendChild(cardEl);
+            });
+
+            flippedCards = [];
+        }
+
+        function handleCardClick(index) {
+            const cardInner = document.getElementById(`card-inner-${index}`);
+            // Prevent flipping already flipped or matched cards
+            if (flippedCards.includes(index) || cardInner.classList.contains('rotate-y-180') && flippedCards.length === 2) return;
+            if (cardInner.dataset.matched === 'true') return;
+
+            // Flip sound & animate
+            playSound('flip');
+            cardInner.classList.add('rotate-y-180');
+            flippedCards.push(index);
+
+            if (flippedCards.length === 2) {
+                const [firstIdx, secondIdx] = flippedCards;
+                const card1 = memoryCards[firstIdx];
+                const card2 = memoryCards[secondIdx];
+
+                if (card1.pairId === card2.pairId && card1.type !== card2.type) {
+                    // Match Success!
+                    playSound('match');
+                    addScore(100);
+                    matchedPairsCount++;
+
+                    document.getElementById(`card-inner-${firstIdx}`).dataset.matched = 'true';
+                    document.getElementById(`card-inner-${secondIdx}`).dataset.matched = 'true';
+
+                    // Highlight styling
+                    setTimeout(() => {
+                        document.getElementById(`card-inner-${firstIdx}`).children[1].classList.add('bg-indigo-950/60', 'border-teal-400');
+                        document.getElementById(`card-inner-${secondIdx}`).children[1].classList.add('bg-indigo-950/60', 'border-teal-400');
+                    }, 250);
+
+                    flippedCards = [];
+
+                    if (matchedPairsCount === totalPairs) {
+                        setTimeout(showVictoryScreen, 600);
+                    }
+                } else {
+                    // Match Fail
+                    playSound('error');
+                    resetCombo();
+                    setTimeout(() => {
+                        document.getElementById(`card-inner-${firstIdx}`).classList.remove('rotate-y-180');
+                        document.getElementById(`card-inner-${secondIdx}`).classList.remove('rotate-y-180');
+                        flippedCards = [];
+                    }, 900);
+                }
+            }
+        }
+
+        /* ==================== 5. DRAG AND DROP GAME LOGIC ==================== */
+        let dragSelectedSource = null;
+
+        function initDragGame() {
+            const container = document.getElementById('drag-game-container');
+            container.classList.remove('hidden');
+
+            const sourceList = document.getElementById('drag-source-list');
+            const targetList = document.getElementById('drag-target-list');
+            sourceList.innerHTML = '';
+            targetList.innerHTML = '';
+
+            const dataPool = getFilteredTrigData();
+            const sampleCount = currentDifficulty === 'easy' ? 4 : (currentDifficulty === 'medium' ? 5 : 6);
+            const selectedItems = [...dataPool].sort(() => 0.5 - Math.random()).slice(0, sampleCount);
+
+            matchedPairsCount = 0;
+            totalPairs = selectedItems.length;
+
+            const draggables = [...selectedItems].sort(() => 0.5 - Math.random());
+            const targets = [...selectedItems].sort(() => 0.5 - Math.random());
+
+            // Render Sources (Trig Functions)
+            draggables.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl p-3.5 text-center font-bold text-indigo-300 cursor-grab active:cursor-grabbing transition-all select-none shadow-md';
+                el.draggable = true;
+                el.id = `drag-src-${idx}`;
+                el.dataset.func = item.func;
+                el.dataset.angle = item.angle;
+                el.innerHTML = `<i class="fa-solid fa-circle-dot text-xs text-indigo-400/60 mr-2"></i>${item.func}(${item.angle})`;
+
+                // HTML5 Drag Events
+                el.ondragstart = (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ func: item.func, angle: item.angle, id: el.id }));
+                    dragSelectedSource = el;
+                };
+
+                // Touch / Click Fallback for Mobile Devices
+                el.onclick = () => {
+                    if (el.dataset.matched === 'true') return;
+                    document.querySelectorAll('#drag-source-list > div').forEach(d => d.classList.remove('ring-2', 'ring-cyan-400'));
+                    el.classList.add('ring-2', 'ring-cyan-400');
+                    dragSelectedSource = el;
+                };
+
+                sourceList.appendChild(el);
+            });
+
+            // Render Targets (Values)
+            targets.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'bg-slate-900 border-2 border-dashed border-slate-700 rounded-xl p-3 flex items-center justify-between transition-all min-h-[56px]';
+                el.dataset.func = item.func;
+                el.dataset.angle = item.angle;
+
+                el.innerHTML = `
+                    <div class="text-xl font-bold text-cyan-300 pl-2">${item.htmlVal}</div>
+                    <div class="drop-zone text-xs text-slate-500 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50">放置於此</div>
+                `;
+
+                // Drag over / Drop
+                el.ondragover = (e) => e.preventDefault();
+                el.ondragenter = () => el.classList.add('border-indigo-500', 'bg-indigo-950/20');
+                el.ondragleave = () => el.classList.remove('border-indigo-500', 'bg-indigo-950/20');
+
+                el.ondrop = (e) => {
+                    e.preventDefault();
+                    el.classList.remove('border-indigo-500', 'bg-indigo-950/20');
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    checkDragMatch(data.func, data.angle, data.id, el);
+                };
+
+                // Click target fallback
+                el.onclick = () => {
+                    if (dragSelectedSource && !el.dataset.matched) {
+                        const func = dragSelectedSource.dataset.func;
+                        const angle = dragSelectedSource.dataset.angle;
+                        checkDragMatch(func, angle, dragSelectedSource.id, el);
+                    }
+                };
+
+                targetList.appendChild(el);
+            });
+        }
+
+        function checkDragMatch(srcFunc, srcAngle, srcId, targetEl) {
+            if (targetEl.dataset.matched) return;
+
+            if (srcFunc === targetEl.dataset.func && srcAngle === targetEl.dataset.angle) {
+                // Correct Match
+                playSound('match');
+                addScore(120);
+                matchedPairsCount++;
+
+                targetEl.dataset.matched = 'true';
+                targetEl.className = 'bg-indigo-950/40 border-2 border-teal-500 rounded-xl p-3 flex items-center justify-between transition-all';
+                targetEl.querySelector('.drop-zone').className = 'text-xs font-bold text-teal-300 bg-teal-500/20 px-3 py-1.5 rounded-lg border border-teal-500/40';
+                targetEl.querySelector('.drop-zone').textContent = `${srcFunc}(${srcAngle})`;
+
+                const srcEl = document.getElementById(srcId);
+                if (srcEl) {
+                    srcEl.dataset.matched = 'true';
+                    srcEl.className = 'bg-slate-900 border border-slate-800 rounded-xl p-3.5 text-center text-slate-600 font-bold opacity-40 cursor-not-allowed';
+                    srcEl.draggable = false;
+                }
+
+                dragSelectedSource = null;
+
+                if (matchedPairsCount === totalPairs) {
+                    setTimeout(showVictoryScreen, 500);
+                }
+            } else {
+                // Wrong Match
+                playSound('error');
+                resetCombo();
+                targetEl.classList.add('border-rose-500', 'bg-rose-950/20');
+                setTimeout(() => {
+                    targetEl.classList.remove('border-rose-500', 'bg-rose-950/20');
+                }, 500);
+            }
+        }
+
+        /* ==================== 6. SPEED QUIZ GAME LOGIC ==================== */
+        let speedCurrentQuestion = null;
+        let speedQuestionsList = [];
+        let speedQuestionIndex = 0;
+        let speedQuestionTimer = null;
+        const SPEED_TIMEOUT = 5000; // 5 seconds per question
+
+        function initSpeedGame() {
+            const container = document.getElementById('speed-game-container');
+            container.classList.remove('hidden');
+
+            const dataPool = getFilteredTrigData();
+            speedQuestionsList = [...dataPool].sort(() => 0.5 - Math.random()).slice(0, 10);
+            speedQuestionIndex = 0;
+
+            nextSpeedQuestion();
+        }
+
+        function nextSpeedQuestion() {
+            if (speedQuestionIndex >= speedQuestionsList.length) {
+                showVictoryScreen();
+                return;
+            }
+
+            speedCurrentQuestion = speedQuestionsList[speedQuestionIndex];
+            speedQuestionIndex++;
+
+            // Render Question Text
+            document.getElementById('speed-question').innerHTML = `${speedCurrentQuestion.func}(${speedCurrentQuestion.angle})`;
+
+            // Prepare Options (1 Correct, 3 Distractors)
+            const allTrigData = TRIG_DATA;
+            const distractorPool = allTrigData.filter(d => d.valStr !== speedCurrentQuestion.valStr);
+            const shuffledDistractors = [...new Set(distractorPool.map(d => d.valStr))]
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3)
+                .map(vStr => allTrigData.find(d => d.valStr === vStr));
+
+            const options = [speedCurrentQuestion, ...shuffledDistractors].sort(() => 0.5 - Math.random());
+
+            // Render Options
+            const optionsContainer = document.getElementById('speed-options');
+            optionsContainer.innerHTML = '';
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'py-4 px-3 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-indigo-500 rounded-2xl font-black text-xl sm:text-2xl text-cyan-300 transition-all flex items-center justify-center shadow-lg active:scale-95';
+                btn.innerHTML = opt.htmlVal;
+                btn.onclick = () => answerSpeedQuestion(opt.valStr === speedCurrentQuestion.valStr, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Start Question Timeout Progress Bar
+            startSpeedProgressBar();
+        }
+
+        function startSpeedProgressBar() {
+            clearInterval(speedQuestionTimer);
+            const progressBar = document.getElementById('speed-progress');
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '100%';
+
+            setTimeout(() => {
+                progressBar.style.transition = `width ${SPEED_TIMEOUT}ms linear`;
+                progressBar.style.width = '0%';
+            }, 50);
+
+            speedQuestionTimer = setTimeout(() => {
+                // Timeout logic
+                playSound('error');
+                resetCombo();
+                nextSpeedQuestion();
+            }, SPEED_TIMEOUT + 50);
+        }
+
+        function answerSpeedQuestion(isCorrect, btnEl) {
+            clearInterval(speedQuestionTimer);
+
+            if (isCorrect) {
+                playSound('match');
+                addScore(150);
+                btnEl.className = 'py-4 px-3 bg-teal-600 border border-teal-400 rounded-2xl font-black text-xl sm:text-2xl text-white transition-all flex items-center justify-center shadow-lg shadow-teal-500/30';
+            } else {
+                playSound('error');
+                resetCombo();
+                btnEl.className = 'py-4 px-3 bg-rose-600 border border-rose-400 rounded-2xl font-black text-xl sm:text-2xl text-white transition-all flex items-center justify-center shadow-lg shadow-rose-500/30';
+            }
+
+            // Lock all buttons briefly
+            const btns = document.querySelectorAll('#speed-options button');
+            btns.forEach(b => b.disabled = true);
+
+            setTimeout(nextSpeedQuestion, 600);
+        }
+
+        /* ==================== 7. REFERENCE TABLE INITIALIZATION ==================== */
+        function initReferenceTable() {
+            const tableBody = document.getElementById('reference-table-body');
+            const funcs = ['sin', 'cos', 'tan', 'cot', 'sec', 'csc'];
+            const angles = ['0°', '30°', '45°', '60°', '90°'];
+
+            tableBody.innerHTML = '';
+
+            funcs.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/40 transition-colors';
+                
+                let rowHtml = `<td class="p-3 border border-slate-800 font-bold text-indigo-400">${f}</td>`;
+                
+                angles.forEach(a => {
+                    const found = TRIG_DATA.find(d => d.func === f && d.angle === a);
+                    rowHtml += `<td class="p-3 border border-slate-800 font-medium">${found ? found.htmlVal : '-'}</td>`;
+                });
+
+                tr.innerHTML = rowHtml;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function toggleReferenceModal() {
+            const modal = document.getElementById('reference-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        /* ==================== 8. PAGE INITIALIZATION ==================== */
+        window.onload = () => {
+            setDifficulty('easy');
+            initReferenceTable();
+        };
+    </script>
+</body>
+</html>
