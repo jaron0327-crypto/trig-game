@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trig-game-v2';
+const CACHE_NAME = 'trig-game-v3';
 
 // 當 Service Worker 安裝時，快取基本頁面與 CDN
 self.addEventListener('install', (event) => {
